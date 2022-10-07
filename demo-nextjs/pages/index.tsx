@@ -1,23 +1,55 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import Image from 'next/image';
-import Link from 'next/link';
-import { gql } from '@apollo/client';
 import { initializeApollo } from '../lib/apollo';
 import styles from '../styles/Home.module.css';
-import { CREATE_AUTHOR, CREATE_BOOK } from '../graphql-client/mutations/createMutation';
 import {
   GET_ALL_AUTHOR,
   GET_ALL_BOOK,
   GET_AUTHOR,
   GET_BOOK,
 } from '../graphql-client/queries/createQueries';
+import { Formik, Form } from 'formik';
+import {
+  FormControl,
+  FormHelperText,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+} from '@mui/material';
 //import GET_ALL_AUTHOR from '../graphql-client/queries/getAllAuthor.graphql';
 import { useQuery, useMutation } from '@apollo/client';
 
+interface CreateBookForm {
+  title: String;
+  author: String;
+  genre: String;
+}
+
+interface Author {
+  id: String;
+  name: String;
+  age: Number;
+}
+
+interface ListAuthor {
+  authors: Author[];
+}
+
+interface AutocompleteOption {
+  id: String;
+  name: String;
+  title: String;
+}
+
 const Home: NextPage = (props) => {
-  const { data, loading, error } = useQuery(GET_ALL_AUTHOR);
+  const { data, loading } = useQuery<ListAuthor>(GET_ALL_AUTHOR);
+  if (loading) return <p>Loading...</p>;
   console.log(data);
+
+  const initialValues: CreateBookForm = { title: '', genre: '', author: '' };
+
   return (
     <div className={styles.container}>
       <Head>
@@ -26,10 +58,56 @@ const Home: NextPage = (props) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className={styles.main}>
-        <Link href="/about">
-          <a>About Page</a>
-        </Link>
+      <main className="w-100 h-100 bg-red">
+        <h1 className={styles.title}>Create Book</h1>
+        <Formik
+          initialValues={initialValues}
+          onSubmit={(values) => {
+            console.log(values);
+          }}
+        >
+          {({ values, handleChange }) => {
+            return (
+              <Form>
+                <FormControl>
+                  <TextField
+                    id="title"
+                    onChange={handleChange}
+                    value={values.title}
+                    label="Standard"
+                    variant="standard"
+                  />
+                  <FormHelperText id="helper-title">Enter title of Book</FormHelperText>
+                  <TextField
+                    id="genre"
+                    onChange={handleChange}
+                    value={values.genre}
+                    label="Standard"
+                    variant="standard"
+                  />
+                  <FormHelperText id="helper-genre">Enter genre of Book</FormHelperText>
+                  <Select
+                    labelId="demo-simple-select-label"
+                    id="author"
+                    value={values.author}
+                    label="Author"
+                    onChange={handleChange}
+                    name="Author"
+                  >
+                    {data?.authors.map((author: { id: String; name: String; age: Number }) => (
+                      <MenuItem key={author.id} value={author.id}>
+                        {author.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <Button type="submit">Submit</Button>
+                </FormControl>
+              </Form>
+            );
+          }}
+        </Formik>
+
+        <div></div>
       </main>
     </div>
   );
@@ -37,10 +115,6 @@ const Home: NextPage = (props) => {
 
 export async function getStaticProps() {
   const apolloClient = initializeApollo();
-
-  // await apolloClient.query({
-  //   //query: ViewerDocument,
-  // });
 
   return {
     props: {
